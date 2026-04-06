@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=DM+Sans:ital,wght@0,200;0,300;0,400;0,500;1,200;1,300&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#C8C5BE;
+  --text:#0D0D0D;
+  --muted:#6B6860;
+  --red:#C8402A;
+  --font-body:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;overflow:hidden;height:100vh;width:100vw;cursor:crosshair;}
+#grid-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.corner-mark{position:fixed;z-index:2;pointer-events:none;}
+.corner-mark svg{stroke:var(--red);fill:none;stroke-width:1.5;}
+.cm-tl{top:28px;left:28px;}.cm-tr{top:28px;right:28px;}.cm-bl{bottom:28px;left:28px;}.cm-br{bottom:28px;right:28px;}
+.cm-tc{top:28px;left:50%;transform:translateX(-50%);}
+.cm-bc{bottom:28px;left:50%;transform:translateX(-50%);}
+.cm-lc{top:50%;left:28px;transform:translateY(-50%);}
+.cm-rc{top:50%;right:28px;transform:translateY(-50%);}
+
+#center{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;}
+#name-block{display:inline-flex;flex-direction:column;align-items:stretch;pointer-events:none;}
+#name-btn{font-family:var(--font-body);font-style:italic;font-weight:200;font-size:clamp(2.5rem,5.5vw,4.5rem);color:var(--text);line-height:1;letter-spacing:-0.01em;background:none;border:none;cursor:pointer;pointer-events:all;padding:0;transition:opacity 0.2s;display:block;white-space:nowrap;}
+#name-btn:hover{opacity:0.55;}
+.tagline{font-family:var(--font-body);font-size:0.8rem;letter-spacing:0.18em;color:var(--text);margin-bottom:0.4rem;font-weight:300;text-align:right;}
+.subtitle{font-family:var(--font-body);font-size:0.82rem;letter-spacing:0.16em;color:var(--text);margin-top:0.5rem;font-weight:300;text-align:left;}
+
+/* Projects: each locked to its 50vw x 50vh quadrant */
+.project{position:fixed;z-index:5;opacity:0;transition:opacity 0.35s ease;pointer-events:none;
+  width:50vw;height:50vh;display:flex;overflow:hidden;}
+#proj-tl{top:0;left:0;padding:2rem;flex-direction:column;align-items:flex-start;justify-content:flex-start;}
+#proj-tr{top:0;right:0;padding:2rem;flex-direction:column;align-items:flex-end;justify-content:flex-start;text-align:right;}
+#proj-bl{bottom:0;left:0;padding:2rem;flex-direction:column-reverse;align-items:flex-start;justify-content:flex-start;}
+#proj-br{bottom:0;right:0;padding:2rem;flex-direction:column-reverse;align-items:flex-end;justify-content:flex-start;text-align:right;}
+.proj-img-wrap{flex:1;min-height:0;display:flex;overflow:hidden;}
+#proj-tl .proj-img-wrap,#proj-tr .proj-img-wrap{align-items:flex-start;}
+#proj-bl .proj-img-wrap,#proj-br .proj-img-wrap{align-items:flex-end;}
+.proj-img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;cursor:pointer;}
+#proj-tl .proj-img,#proj-tr .proj-img{object-position:top;}
+#proj-bl .proj-img,#proj-br .proj-img{object-position:bottom;}
+.proj-label{flex-shrink:0;}
+#proj-tl .proj-label,#proj-tr .proj-label{margin-top:0.5rem;}
+#proj-bl .proj-label,#proj-br .proj-label{margin-bottom:0.5rem;}
+.proj-title{font-family:var(--font-body);font-size:0.68rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text);margin-bottom:0.25rem;}
+.proj-meta{font-family:var(--font-body);font-size:0.7rem;color:var(--muted);line-height:1.7;font-weight:300;}
+
+/* About page */
+#about-page{position:fixed;inset:0;background:var(--bg);z-index:50;opacity:0;pointer-events:none;transition:opacity 0.4s ease;overflow:hidden;}
+#about-page.active{opacity:1;pointer-events:all;}
+#about-canvas{position:absolute;inset:0;pointer-events:none;}
+.about-name{font-family:var(--font-body);font-style:italic;font-weight:200;font-size:clamp(2.5rem,5.5vw,4.5rem);color:var(--text);text-align:center;padding-top:2rem;position:relative;z-index:2;}
+.about-content{position:relative;z-index:2;display:grid;grid-template-columns:auto 1fr;gap:3rem;padding:2rem 5rem;width:100%;max-width:1050px;margin:0 auto;align-items:start;}
+.about-photos{display:flex;flex-direction:column;position:relative;width:220px;flex-shrink:0;}
+.about-photo-main{width:180px;height:220px;object-fit:cover;object-position:top center;display:block;position:relative;z-index:2;margin-left:40px;}
+.about-photo-child{width:180px;height:220px;object-fit:cover;object-position:top center;display:block;position:relative;z-index:3;margin-top:-40px;margin-left:-20px;box-shadow:4px 4px 0 var(--bg);}
+.about-text{position:relative;padding-top:0.25rem;}
+.about-section-title{font-family:var(--font-body);font-size:0.75rem;font-weight:700;letter-spacing:0.1em;color:var(--text);margin-bottom:0.35rem;margin-top:1.4rem;text-transform:uppercase;}
+.about-section-title:first-child{margin-top:0;}
+.about-divider{width:100%;height:1px;background:var(--red);margin-bottom:0.7rem;}
+.about-body{font-family:var(--font-body);font-size:0.83rem;color:var(--text);line-height:1.85;font-weight:300;max-width:460px;}
+.about-edu{font-family:var(--font-body);font-size:0.82rem;color:var(--text);line-height:2.1;font-weight:300;}
+.resume-link{font-family:var(--font-body);font-size:0.72rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text);text-decoration:none;border-bottom:1px solid var(--text);padding-bottom:1px;display:inline-block;margin-top:0.4rem;cursor:pointer;}
+#back-btn{position:absolute;top:1.75rem;left:2.5rem;z-index:60;background:none;border:none;font-family:var(--font-body);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;}
+#back-btn:hover{color:var(--text);}
+
+/* Project detail pages */
+.project-page{position:fixed;inset:0;background:var(--bg);z-index:50;opacity:0;pointer-events:none;transition:opacity 0.4s ease;overflow-y:auto;overflow-x:hidden;cursor:default;}
+.project-page.active{opacity:1;pointer-events:all;}
+.project-page-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.proj-back-btn{position:fixed;top:1.75rem;left:2.5rem;z-index:60;background:none;border:none;font-family:var(--font-body);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;}
+.proj-back-btn:hover{color:var(--text);}
+.project-page-inner{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:5rem 2rem 4rem;}
+.project-page-title{font-family:var(--font-body);font-style:italic;font-weight:200;font-size:clamp(2rem,4.5vw,3.5rem);color:var(--text);line-height:1;margin-bottom:0.75rem;}
+.project-page-divider{width:100%;height:1px;background:var(--red);margin-bottom:1.25rem;}
+.project-page-desc{font-family:var(--font-body);font-size:0.88rem;color:var(--muted);line-height:1.9;font-weight:300;max-width:600px;margin-bottom:2.5rem;}
+.project-page-meta{font-family:var(--font-body);font-size:0.68rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:2.5rem;}
+.pdf-slides{width:100%;display:flex;flex-direction:column;gap:1.5rem;}
+.pdf-slide-canvas{width:100%;height:auto;display:block;box-shadow:0 2px 16px rgba(13,13,13,0.10);}
+</style>
+</head>
+<body>
+
+<canvas id="grid-canvas"></canvas>
+
+<!-- All 8 crosshairs -->
+<div class="corner-mark cm-tl"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-tr"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-bl"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-br"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-tc"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-bc"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-lc"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+<div class="corner-mark cm-rc"><svg width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20"/><line x1="0" y1="10" x2="20" y2="10"/></svg></div>
+
+<div id="center">
+  <div id="name-block">
+    <div class="tagline">move without fear</div>
+    <button id="name-btn">Ethan Camacho</button>
+    <div class="subtitle">designer / engineer / etc.</div>
+  </div>
+</div>
+
+<!-- TL: Redefine the Hood -->
+<div class="project" id="proj-tl">
+  <div class="proj-img-wrap"><img class="proj-img" src="DSC09894.jpg" alt="Redefine the Hood" id="img-tl"></div>
+  <div class="proj-label">
+    <div class="proj-title">Redefine the Hood</div>
+    <div class="proj-meta">University of Oregon · Apparel Studio<br>5 week project · March 2026</div>
+  </div>
+</div>
+
+<!-- TR: Pressure Reduces Stress -->
+<div class="project" id="proj-tr">
+  <div class="proj-img-wrap"><img class="proj-img" src="Front1.jpg" alt="Pressure Reduces Stress" id="img-tr"></div>
+  <div class="proj-label">
+    <div class="proj-title">Pressure Reduces Stress</div>
+    <div class="proj-meta">University of Oregon · Apparel Studio<br>3 week project · February 2026</div>
+  </div>
+</div>
+
+<!-- BL: Wrap and Clip -->
+<div class="project" id="proj-bl">
+  <div class="proj-img-wrap"><img class="proj-img" src="WrapClip.jfif" alt="Wrap and Clip" id="img-bl"></div>
+  <div class="proj-label">
+    <div class="proj-title">Wrap and Clip</div>
+    <div class="proj-meta">University of Oregon<br>2 week project · December 2025</div>
+  </div>
+</div>
+
+<!-- BR: Full Body Brace -->
+<div class="project" id="proj-br">
+  <div class="proj-img-wrap"><img class="proj-img" src="RichardFullBrace.png" alt="Full Body Brace" id="img-br"></div>
+  <div class="proj-label">
+    <div class="proj-title">Full Body Brace</div>
+    <div class="proj-meta">Virginia Tech<br>2 semester project · May 2025</div>
+  </div>
+</div>
+
+<!-- About page -->
+<div id="about-page">
+  <canvas id="about-canvas"></canvas>
+  <button id="back-btn">&#8592; Home</button>
+  <div class="about-name">Ethan Camacho</div>
+  <div class="about-content">
+    <div class="about-photos">
+      <img class="about-photo-main" src="ethan_camacho_headshot2.JPG" alt="Ethan Camacho">
+      <img class="about-photo-child" src="EC_child.png" alt="Ethan as a child">
+    </div>
+    <div class="about-text">
+      <div class="about-section-title">Background</div>
+      <div class="about-divider"></div>
+      <div class="about-body">Ever since I was little, being active and involved in sports has been at the center of my life. I have seen firsthand the transformative power of sport, and hope to bring more people into this space through user-centered design. Emphasizing safety and comfort, I am committed to developing innovative products that combine biomechanics, anatomy, research, and design to give people of all backgrounds the confidence to move freely and without fear.</div>
+      <div class="about-section-title">Education</div>
+      <div class="about-divider"></div>
+      <div class="about-edu">
+        B.S. in Biomedical Engineering, Virginia Tech &mdash; '25<br>
+        M.S. in Sports Product Design, University of Oregon &mdash; '27
+      </div>
+      <a class="about-section-title" href="https://drive.google.com/file/d/1xNEAy9iCvTie7gU3HWPMeQpD-F85TLfO/view?usp=sharing" target="_blank">View Resume &nearr;</a>
+      <div class="about-section-title">Contact</div>
+      <div class="about-divider"></div>
+      <div class="about-edu">
+        ethancamacho8@gmail.com<br>
+        571-205-3414
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Project detail page: Redefine the Hood -->
+<div class="project-page" id="page-tl">
+  <canvas class="project-page-canvas" id="proj-canvas-tl"></canvas>
+  <button class="proj-back-btn" data-target="page-tl">&#8592; Home</button>
+  <div class="project-page-inner">
+    <div class="project-page-title">Redefine the Hood</div>
+    <div class="project-page-divider"></div>
+    <div class="project-page-meta">University of Oregon · Apparel Studio · 5 week project · March 2026</div>
+    <div class="project-page-desc">How might we design a hood for urban commuter cyclists that they actually want to wear?</div>
+    <div class="pdf-slides" id="pdf-slides-tl"></div>
+  </div>
+</div>
+
+<!-- Project detail page: Pressure Reduces Stress (placeholder) -->
+<div class="project-page" id="page-tr">
+  <canvas class="project-page-canvas" id="proj-canvas-tr"></canvas>
+  <button class="proj-back-btn" data-target="page-tr">&#8592; Home</button>
+  <div class="project-page-inner">
+    <div class="project-page-title">Pressure Reduces Stress</div>
+    <div class="project-page-divider"></div>
+    <div class="project-page-meta">University of Oregon · Apparel Studio · 3 week project · February 2026</div>
+    <div class="project-page-desc">How might we reduce pre-match anxiety in youth soccer players?</div>
+    <div class="pdf-slides" id="pdf-slides-tr"></div>
+  </div>
+</div>
+
+<!-- Project detail page: Wrap and Clip (placeholder) -->
+<div class="project-page" id="page-bl">
+  <canvas class="project-page-canvas" id="proj-canvas-bl"></canvas>
+  <button class="proj-back-btn" data-target="page-bl">&#8592; Home</button>
+  <div class="project-page-inner">
+    <div class="project-page-title">Wrap and Clip</div>
+    <div class="project-page-divider"></div>
+    <div class="project-page-meta">University of Oregon · 2 week project · December 2025</div>
+    <div class="project-page-desc">Project description coming soon.</div>
+    <div class="pdf-slides" id="pdf-slides-bl"></div>
+  </div>
+</div>
+
+<!-- Project detail page: Full Body Brace (placeholder) -->
+<div class="project-page" id="page-br">
+  <canvas class="project-page-canvas" id="proj-canvas-br"></canvas>
+  <button class="proj-back-btn" data-target="page-br">&#8592; Home</button>
+  <div class="project-page-inner">
+    <div class="project-page-title">Full Body Brace</div>
+    <div class="project-page-divider"></div>
+    <div class="project-page-meta">Virginia Tech · 2 semester project · May 2025</div>
+    <div class="project-page-desc">Project description coming soon.</div>
+    <div class="pdf-slides" id="pdf-slides-br"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function(){
+  // PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  // Map project slide containers to their PDF filenames
+  const projectPDFs = {
+    'pdf-slides-tl': 'Final_Presentation_Camacho.pdf',
+    // Add others when ready:
+    'pdf-slides-tr': 'Final_Presentation_Camacho_Compression.pdf',
+    // 'pdf-slides-bl': 'project3.pdf',
+    // 'pdf-slides-br': 'project4.pdf',
+  };
+
+  async function renderPDF(containerId) {
+    const url = projectPDFs[containerId];
+    if (!url) return;
+    const container = document.getElementById(containerId);
+    if (!container || container.dataset.loaded) return;
+    container.dataset.loaded = 'true';
+
+    // Show loading indicator
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;padding:2rem 0;">Loading slides...</p>';
+
+    try {
+      const pdf = await pdfjsLib.getDocument({ url, withCredentials: false }).promise;
+      container.innerHTML = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const containerWidth = container.clientWidth;
+        const baseViewport = page.getViewport({ scale: 1 });
+        const scale = (containerWidth * window.devicePixelRatio) / baseViewport.width;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-slide-canvas';
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        container.appendChild(canvas);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      }
+    } catch(err) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;">Could not load slides. Make sure the PDF is shared publicly on Google Drive.</p>';
+      console.error('PDF render error:', err);
+    }
+  }
+
+  // Grid drawing
+  const canvas = document.getElementById('grid-canvas');
+  const ctx = canvas.getContext('2d');
+  const aboutCanvas = document.getElementById('about-canvas');
+  const aboutCtx = aboutCanvas.getContext('2d');
+  const aboutPage = document.getElementById('about-page');
+  const nameBtn = document.getElementById('name-btn');
+  const backBtn = document.getElementById('back-btn');
+  const projects = [
+    document.getElementById('proj-tl'),
+    document.getElementById('proj-tr'),
+    document.getElementById('proj-bl'),
+    document.getElementById('proj-br')
+  ];
+
+  const projPageCanvases = {
+    'page-tl': document.getElementById('proj-canvas-tl'),
+    'page-tr': document.getElementById('proj-canvas-tr'),
+    'page-bl': document.getElementById('proj-canvas-bl'),
+    'page-br': document.getElementById('proj-canvas-br'),
+  };
+
+  function drawGrid(c, ct){
+    const w = window.innerWidth, h = window.innerHeight;
+    c.width = w; c.height = h;
+    ct.clearRect(0,0,w,h);
+    ct.strokeStyle = 'rgba(13,13,13,0.07)';
+    ct.lineWidth = 0.5;
+    const step = 48;
+    for(let x=0;x<=w;x+=step){ct.beginPath();ct.moveTo(x,0);ct.lineTo(x,h);ct.stroke();}
+    for(let y=0;y<=h;y+=step){ct.beginPath();ct.moveTo(0,y);ct.lineTo(w,y);ct.stroke();}
+  }
+
+  function drawAllGrids(){
+    drawGrid(canvas, ctx);
+    drawGrid(aboutCanvas, aboutCtx);
+    Object.values(projPageCanvases).forEach(c => {
+      drawGrid(c, c.getContext('2d'));
+    });
+  }
+
+  drawAllGrids();
+  window.addEventListener('resize', drawAllGrids);
+
+  // Mouse tracking for quadrant reveals
+  document.addEventListener('mousemove', function(e){
+    if(aboutPage.classList.contains('active')) return;
+    if(document.querySelector('.project-page.active')) return;
+    const cx = window.innerWidth/2, cy = window.innerHeight/2;
+    const dx = e.clientX - cx, dy = e.clientY - cy;
+    const angle = Math.atan2(dy, dx);
+    const pi = Math.PI;
+    projects.forEach(p => {
+      let show = false;
+      const id = p.id;
+      if(id==='proj-tl' && angle>=-pi && angle<-pi/2) show=true;
+      if(id==='proj-tr' && angle>=-pi/2 && angle<0) show=true;
+      if(id==='proj-bl' && angle>=pi/2 && angle<=pi) show=true;
+      if(id==='proj-br' && angle>=0 && angle<pi/2) show=true;
+      p.style.opacity = show ? '1' : '0';
+      p.style.pointerEvents = show ? 'all' : 'none';
+    });
+  });
+
+  document.addEventListener('mouseleave', function(){
+    projects.forEach(p => {
+      p.style.opacity = '0';
+      p.style.pointerEvents = 'none';
+    });
+  });
+
+  // Open about page
+  nameBtn.addEventListener('click', function(){
+    aboutPage.classList.add('active');
+  });
+
+  // Close about page
+  backBtn.addEventListener('click', function(){
+    aboutPage.classList.remove('active');
+  });
+
+  // Map image IDs to project page IDs and slide container IDs
+  const imgMap = {
+    'img-tl': { page: 'page-tl', slides: 'pdf-slides-tl' },
+    'img-tr': { page: 'page-tr', slides: 'pdf-slides-tr' },
+    'img-bl': { page: 'page-bl', slides: 'pdf-slides-bl' },
+    'img-br': { page: 'page-br', slides: 'pdf-slides-br' },
+  };
+
+  Object.entries(imgMap).forEach(([imgId, { page: pageId, slides: slidesId }]) => {
+    const img = document.getElementById(imgId);
+    if(img){
+      img.addEventListener('click', function(e){
+        e.stopPropagation();
+        const page = document.getElementById(pageId);
+        page.classList.add('active');
+        page.scrollTop = 0;
+        // Render PDF slides on first open
+        renderPDF(slidesId);
+      });
+    }
+  });
+
+  // Close project pages
+  document.querySelectorAll('.proj-back-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      const pageId = btn.getAttribute('data-target');
+      document.getElementById(pageId).classList.remove('active');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
